@@ -1,0 +1,45 @@
+
+syntax = "proto3";
+
+option go_package = "./grpcAuditLog";
+option java_multiple_files = true;
+option java_package = "io.grpc.auditlog.proto";
+option java_outer_classname = "AuditLogProto";
+
+package proto;
+
+// The storage-node service definition.
+service AuditLogService {
+  // Sends a AuditLog Request
+  rpc SendAuditToAdmin (SendAuditToAdminRequest) returns (SendAuditToAdminResponse) {}  
+}
+
+// Send Audit To Admin Request
+message SendAuditToAdminRequest {
+  AuditLogData auditlog = 1;
+  AuditSummaryData auditsummary = 2;
+}
+
+// The storage nodes response message
+message SendAuditToAdminResponse {
+  string message = 1;
+}
+
+message AuditLogData {
+  string Identity = 1;
+  string Chunk = 2;
+	uint64 TimeInMilliSeconds = 3;
+	string Result = 4;
+	string Message = 5;
+	string NextAction = 6;
+}
+message AuditSummaryData {
+  string Identity = 1;
+  uint64 Successes = 2;
+  uint64 Fails = 3;
+  string Status = 4;
+  uint64 Offlines = 5;
+  uint64 TotalCount = 6;
+  uint64 LastAuditTime = 7;
+  uint64 Priority = 8;
+}

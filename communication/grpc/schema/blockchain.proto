@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+
+package grpcBlockchain;
+
+option go_package = "./grpcBlockchain";
+
+message SuccessResponse {
+    string body = 1;
+}
+
+message EmptyRequest {
+  string body = 1;
+}
+
+message Wallet {
+  string body = 1;
+}
+
+message ActionDataRequest {
+	string ValidatorID = 1;
+	string FAK = 2;
+	message Result {
+		string ValidatorID = 1;
+		bool Result = 2;
+	}
+	repeated Result Results = 3;
+	message Action {
+		string ActionID = 1;
+		string ActionType = 2;
+		string ActionData = 3;
+		string ResourceID = 4;
+	}
+	Action action = 4;
+}
+
+// The request message containing the user's name.
+message AdminRequest {
+	string action_id = 1;
+  string action_name = 2;
+	string fak = 3;
+
+}
+
+// The response message containing the greetings
+message AdminReply {
+  string message = 1;
+}
+//structs for handling reception of newly generated shell schema on admin side
+message NewShellSchema {
+    string type = 1; //not sure if what all params we need right now
+    string jsonShellSchema = 2;
+}
+
+message NewShellSchemaResponse {
+    string jsonFAK = 1;
+}
+
+service GrpcBlockchainService {
+  rpc PrintChain(EmptyRequest) returns (SuccessResponse) {}
+  rpc CreateChain(Wallet) returns (SuccessResponse) {}
+  rpc CreateActionData(ActionDataRequest) returns (SuccessResponse) {}
+	rpc ProcessAdminRequest (AdminRequest) returns (AdminReply) {}
+  //function for handling reception of newly generated shell schema on admin side
+  rpc HandleNewShellSchema( NewShellSchema) returns ( NewShellSchemaResponse) {}
+}

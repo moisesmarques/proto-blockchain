@@ -1,0 +1,116 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Deploy node into network
+Parameters:
+  AmiId:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: >-
+      /aws/service/canonical/ubuntu/server/20.04/stable/current/amd64/hvm/ebs-gp2/ami-id
+  KeyName:
+    Type: String
+    Description: The SSH Key Name that is already present in the target account
+  InstanceType:
+    Type: String
+    Default: t3.small
+    Description: The instance type to be used for the node instance
+  VolumeSize:
+    Description: Volume Size
+    Type: String
+  VpcId:
+    Description: The ID of VPC where the instance will be launced
+    Type: String
+  MaxSize:
+    Description: The max size of ASG
+    Type: String
+  MinSize:
+    Description: The min size of ASG
+    Type: String
+  DesireSize:
+    Description: The min size of ASG
+    Type: String
+  VpcEc2Subnet1:
+    Description: EC2 subnet 1(AZ-a)
+    Type: 'AWS::EC2::Subnet::Id'
+  VpcEc2Subnet2:
+    Description: EC2 subnet 2(AZ-c)
+    Type: 'AWS::EC2::Subnet::Id'
+  DeployName:
+    Description: Server Name for the deployment
+    Type: String
+Resources:
+  InstanceIAMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore'
+      RoleName: !Sub '${AWS::StackName}-InstanceIAMRole'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+  InstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Path: /
+      Roles:
+        - !Ref InstanceIAMRole
+  InstanceSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'Allows all outbound, All TCP Connection'
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: 0.0.0.0/0
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: 0.0.0.0/0
+      VpcId:
+        Ref: VpcId
+  InstanceLaunchConfig:
+    Type: 'AWS::AutoScaling::LaunchConfiguration'
+    Properties:
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: 30
+            VolumeType: gp2
+            DeleteOnTermination: 'true'
+            Encrypted: 'true'
+      KeyName:
+        Ref: KeyName
+      SecurityGroups:
+        - Ref: InstanceSecurityGroup
+      ImageId:
+        Ref: AmiId
+      InstanceType:
+        Ref: InstanceType
+      MetadataOptions:
+        HttpEndpoint: enabled
+        HttpPutResponseHopLimit: 10
+        HttpTokens: required
+      IamInstanceProfile:
+        Ref: InstanceProfile
+  BlockNodeGroup:
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+    Properties:
+      DesiredCapacity: !Ref DesireSize
+      LaunchConfigurationName: !Ref InstanceLaunchConfig
+      MetricsCollection:
+        - Granularity: 1Minute
+      MaxSize: !Ref MaxSize
+      MinSize: !Ref MinSize
+      Tags:
+        - Key: Name
+          Value: !Ref DeployName
+          PropagateAtLaunch: true
+      VPCZoneIdentifier:
+        - !Ref VpcEc2Subnet1
+        - !Ref VpcEc2Subnet2

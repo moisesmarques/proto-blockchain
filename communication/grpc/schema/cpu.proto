@@ -1,0 +1,47 @@
+syntax = "proto3";
+option go_package = "judge-blockchain/communication/grpc/schema/cpu";
+
+package cpu;
+
+service CPUShard {
+  rpc ProcessRequest (CPURequest) returns (CPUConsensusResult) {}
+}
+
+message CPURequest{
+
+	string action_id = 1;
+  string action_name = 2;
+	string function = 3;
+	string secrete_share = 4;
+	string sender = 5;
+	repeated string participanting_nodes = 6;
+}
+
+message CPUConsensusResult {
+
+		message Nodes{
+			string id = 1;
+			string result_hash = 2;
+			string deterministic_result_hash = 3;
+			string deterministic_result_raw = 4;
+			string result_raw = 5;
+			string elapsed = 6;
+			string node_address = 7;
+			
+		}
+
+    message Verdict {
+      string result = 1;
+      string consensus_status = 2;
+      int32 node_count = 3;
+			repeated Nodes nodes = 4;
+    }
+
+  string action_id = 1;
+  string action_name = 2;
+	string sender_node = 3;
+	Verdict verdict = 4;
+
+}
+
+
